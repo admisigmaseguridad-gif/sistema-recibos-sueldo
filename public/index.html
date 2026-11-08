@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReciboFácil - Recibos de Sueldo Digitales</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="#" class="brand" onclick="switchTab('employee')">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <path d="m9 15 2 2 4-4"></path>
+        </svg>
+      </div>
+      <span>ReciboFácil</span>
+    </a>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tabBtnEmployee" onclick="switchTab('employee')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span>Portal Empleado</span>
+      </button>
+
+      <button class="nav-tab" id="tabBtnCompany" onclick="switchTab('company')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="16" height="20" x="4" y="2" rx="2" ry="2"></rect>
+          <path d="M9 22v-4h6v4"></path>
+          <path d="M8 6h.01"></path>
+          <path d="M16 6h.01"></path>
+          <path d="M8 10h.01"></path>
+          <path d="M16 10h.01"></path>
+          <path d="M8 14h.01"></path>
+          <path d="M16 14h.01"></path>
+        </svg>
+        <span>Empresa / RRHH</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Container -->
+  <main class="container">
+
+    <!-- SECCIÓN PORTAL DEL EMPLEADO -->
+    <section id="sectionEmployee">
+      <div class="section-header">
+        <h1>Consultá y Firmá tu Recibo de Sueldo</h1>
+        <p>Accedé de forma segura a tus recibos de sueldo, descargalos y firmalos digitalmente desde cualquier dispositivo.</p>
+      </div>
+
+      <!-- Buscador por DNI o CUIL -->
+      <div class="search-container">
+        <div class="search-input-group">
+          <input type="text" id="employeeSearchInput" class="search-input" placeholder="Ingresá tu DNI o CUIL (ej: 13780044 o 20-13780044-7)" autocomplete="off">
+          <button class="btn btn-primary" onclick="searchEmployeeReceipts()" id="btnSearchEmployee">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Buscar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resultados del Empleado -->
+      <div id="employeeResults" style="display: none;">
+        <div class="card" style="margin-bottom: 1.5rem; background: #f0fdf4; border-color: #bbf7d0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 700; color: #166534; text-transform: uppercase;">Empleado Identificado</span>
+              <h2 id="employeeNameTitle" style="font-size: 1.35rem; color: #14532d; margin-top: 0.15rem;">-</h2>
+              <p style="font-size: 0.85rem; color: #15803d;" id="employeeIdSubtitle">-</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="clearEmployeeSearch()">Nueva Consulta</button>
+          </div>
+        </div>
+
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">Tus Recibos Disponibles</h3>
+        <div class="employee-cards-grid" id="employeeReceiptsList">
+          <!-- Dinámico -->
+        </div>
+      </div>
+
+      <!-- Estado vacío inicial o sin resultados -->
+      <div id="employeeEmptyState" class="card" style="text-align: center; padding: 3rem 1.5rem;">
+        <div style="font-size: 3rem; margin-bottom: 0.75rem;">🔍</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem;">Ingresá tus datos para ver tus recibos</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 480px; margin: 0 auto;">
+          Podés escribir tu número de DNI o tu CUIL completo. El sistema buscará de inmediato todos los recibos liquidados a tu nombre.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECCIÓN PANEL DE LA EMPRESA -->
+    <section id="sectionCompany" style="display: none;">
+      <div class="section-header">
+        <h1>Panel de Gestión de Recibos</h1>
+        <p>Subí el archivo PDF con todos los recibos de sueldo consolidados. La aplicación los cortará y asignará automáticamente a cada empleado.</p>
+      </div>
+
+      <!-- Métricas -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Recibos</span>
+          <span class="stat-value" id="statTotal">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Pendientes de Firma</span>
+          <span class="stat-value" id="statPending" style="color: var(--warning);">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Firmados</span>
+          <span class="stat-value" id="statSigned" style="color: var(--success);">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Tasa de Firma</span>
+          <span class="stat-value" id="statRate">0%</span>
+        </div>
+      </div>
+
+      <!-- Carga de PDF -->
+      <div class="card">
+        <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">Subir PDF Consolidado de Recibos</h2>
+        
+        <div class="dropzone" id="pdfDropzone" onclick="document.getElementById('pdfFileInput').click()">
+          <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handleFileSelected(event)">
+          <div class="dropzone-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h3>Arrastrá aquí el archivo PDF o hacé clic para seleccionar</h3>
+          <p>Soporta archivos consolidados de cualquier cantidad de páginas (ej: SUELDOS 07 2026.pdf)</p>
+          <div id="selectedFileName" style="margin-top: 0.75rem; font-weight: 600; color: var(--primary); display: none;"></div>
+        </div>
+
+        <div class="progress-container" id="uploadProgressContainer">
+          <div class="progress-track">
+            <div class="progress-fill" id="uploadProgressBar"></div>
+          </div>
+          <div class="progress-text">
+            <span id="uploadProgressText">Procesando y dividiendo recibos...</span>
+            <span id="uploadProgressPercent">0%</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+          <button class="btn btn-primary" id="btnUploadSubmit" onclick="uploadAndSplitPdf()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="6" y1="3" x2="6" y2="15"></line>
+              <circle cx="18" cy="6" r="3"></circle>
+              <circle cx="6" cy="18" r="3"></circle>
+              <path d="m18 9 4-4"></path>
+              <path d="m18 15 4 4"></path>
+            </svg>
+            <span>Cortar y Procesar Recibos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Recibos y Filtros -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 700;">Recibos Divididos en el Sistema</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Listado individual por empleado con links directos de firma y descarga.</p>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="text" id="companyTableFilter" placeholder="Filtrar por nombre o CUIL..." style="padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.85rem;" oninput="applyTableFilters()">
+            
+            <select id="companyStatusFilter" style="padding: 0.45rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.85rem; background: white;" onchange="applyTableFilters()">
+              <option value="">Todos los estados</option>
+              <option value="Pendiente">Pendientes</option>
+              <option value="Firmado">Firmados</option>
+            </select>
+
+            <button class="btn btn-secondary btn-sm" onclick="downloadZip('signed')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Descargar Firmados (ZIP)</span>
+            </button>
+
+            <button class="btn btn-secondary btn-sm" onclick="downloadZip('all')">
+              <span>Descargar Todo (ZIP)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Legajo</th>
+                <th>Empleado</th>
+                <th>CUIL</th>
+                <th>Período</th>
+                <th>Estado</th>
+                <th style="text-align: right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="companyTableBody">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL DE FIRMA DIGITAL Y VISUALIZADOR -->
+  <div class="modal-overlay" id="signModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalSignTitle">Firmar Recibo de Sueldo</h2>
+          <p id="modalSignSubtitle" style="font-size: 0.85rem; color: var(--text-muted);"></p>
+        </div>
+        <button class="modal-close" onclick="closeSignModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Visualizador de PDF -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Visualización del Documento:</span>
+            <a id="modalDownloadOriginalLink" href="#" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+              Descargar PDF Original
+            </a>
+          </div>
+          <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 320px; border: 1px solid var(--border); border-radius: var(--radius-md); background: #525659;"></iframe>
+        </div>
+
+        <!-- Canvas de Firma -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label style="font-size: 0.9rem; font-weight: 700;">Dibuja tu firma a continuación:</label>
+            <button class="btn btn-secondary btn-sm" onclick="clearSignatureCanvas()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+              <span>Borrar / Rehacer</span>
+            </button>
+          </div>
+
+          <div class="signature-pad-container">
+            <canvas id="signatureCanvas"></canvas>
+            <div class="signature-guide">Firma aquí sobre la línea con el dedo o el mouse</div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+            Al confirmar, se estampará tu firma manuscrita y un sello digital criptográfico con fecha, hora e identificador único en el recibo.
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSignModal()">Cancelar</button>
+        <button class="btn btn-success" id="btnSubmitSignature" onclick="submitSignature()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Confirmar y Firmar Recibo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ÉXITO TRAS LA FIRMA (CONFIRMACIÓN AL EMPLEADO) -->
+  <div class="modal-overlay" id="signatureSuccessModal">
+    <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2rem 1.5rem;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; color: #0f172a;">¡Recibo Firmado con Éxito!</h2>
+      
+      <p style="font-size: 0.95rem; font-weight: 600; color: #15803d; margin-bottom: 0.75rem;">
+        La empresa ya recibió tu recibo firmado en su sistema automáticamente.
+      </p>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem; background: #f8fafc; padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <strong>No es necesario que hagas nada más.</strong> No tenés que enviar correos, mensajes ni comprobantes físicos. Tu firma manuscrita y el sello digital con constancia de conformidad ya quedaron registrados en la base de datos de Recursos Humanos.
+      </p>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <a id="btnSuccessDownloadCopy" href="#" target="_blank" download class="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Descargar mi copia (PDF)</span>
+        </a>
+        <button class="btn btn-secondary" onclick="closeSuccessModal()">Listo, finalizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE EDICIÓN DE DATOS (RRHH / EMPRESA) -->
+  <div class="modal-overlay" id="editReceiptModal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h2>Editar Datos del Recibo</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Modificá los datos del empleado para personalizar el envío y el sello digital.</p>
+        </div>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="editReceiptId">
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.35rem;">Apellido y Nombre:</label>
+            <input type="text" id="editReceiptName" class="search-input" style="width: 100%; padding: 0.55rem 0.75rem; font-size: 0.95rem;" placeholder="Ej: KELLER CARLOS ARIEL">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.35rem;">Nro. de Legajo:</label>
+              <input type="text" id="editReceiptLegajo" class="search-input" style="width: 100%; padding: 0.55rem 0.75rem; font-size: 0.95rem;" placeholder="Ej: 00000122">
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.35rem;">Período:</label>
+              <input type="text" id="editReceiptPeriod" class="search-input" style="width: 100%; padding: 0.55rem 0.75rem; font-size: 0.95rem;" placeholder="Ej: 10/2026">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.35rem;">C.U.I.L.:</label>
+              <input type="text" id="editReceiptCuil" class="search-input" style="width: 100%; padding: 0.55rem 0.75rem; font-size: 0.95rem;" placeholder="Ej: 20-43197954-4">
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.35rem;">D.N.I.:</label>
+              <input type="text" id="editReceiptDni" class="search-input" style="width: 100%; padding: 0.55rem 0.75rem; font-size: 0.95rem;" placeholder="Ej: 43197954">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btnSaveEditReceipt" onclick="saveReceiptEdit()">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ACCESO SEGURO A RRHH (PIN) -->
+  <div class="modal-overlay" id="adminPinModal">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <div class="modal-header" style="justify-content: center; position: relative;">
+        <h2 style="font-size: 1.25rem;">🔒 Acceso Empresa / RRHH</h2>
+        <button class="modal-close" style="position: absolute; right: 1rem; top: 1rem;" onclick="closeAdminPinModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem 1rem;">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Este panel contiene información confidencial de nómina. Ingresá el PIN de administrador para continuar:
+        </p>
+        <input type="password" id="adminPinInput" class="search-input" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem; width: 180px; margin: 0 auto 0.5rem auto; display: block;" placeholder="••••" maxlength="8">
+        <p style="font-size: 0.75rem; color: var(--text-muted);">PIN inicial por defecto: <code>1234</code></p>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="btn btn-secondary" onclick="closeAdminPinModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitAdminPin()">Ingresar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastNotification">
+    <span id="toastIcon">ℹ️</span>
+    <span id="toastMessage">Mensaje</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

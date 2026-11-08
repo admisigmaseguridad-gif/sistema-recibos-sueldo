@@ -1,0 +1,19 @@
+{
+  "name": "sistema-recibos-sueldo",
+  "version": "1.0.0",
+  "description": "Aplicación web integral para corte, distribución, descarga y firma digital de recibos de sueldo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/verify-all.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jszip": "^3.10.1",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1",
+    "pdf.js-extract": "^0.2.1",
+    "uuid": "^9.0.1"
+  }
+}

@@ -6,6 +6,7 @@ const fs = require('fs');
 const JSZip = require('jszip');
 
 const db = require('./services/db');
+const auth = require('./services/auth');
 const { processPdfFile } = require('./services/pdfProcessor');
 const { signReceipt } = require('./services/signer');
 
@@ -53,14 +54,23 @@ const upload = multer({
     }
 });
 
-// Endpoint: Verificación de PIN para RRHH (Seguridad para acceso en la nube)
+// Endpoint: Verificación de Contraseña para RRHH (Seguridad para acceso en la nube)
 app.post('/api/auth/verify-pin', (req, res) => {
-    const { pin } = req.body;
-    const correctPin = process.env.ADMIN_PIN || '1234';
-    if (pin && pin.toString().trim() === correctPin.toString().trim()) {
+    const password = req.body.password || req.body.pin;
+    if (auth.verify(password)) {
         return res.json({ success: true, message: 'Acceso autorizado' });
     }
-    return res.status(401).json({ success: false, error: 'PIN de acceso incorrecto' });
+    return res.status(401).json({ success: false, error: 'Contraseña de acceso incorrecta.' });
+});
+
+// Endpoint: Cambiar contraseña de administrador
+app.post('/api/auth/change-password', (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const result = auth.changePassword(currentPassword, newPassword);
+    if (!result.success) {
+        return res.status(400).json(result);
+    }
+    return res.json(result);
 });
 
 // Endpoint: Subida y partición de PDF general por parte de la empresa
@@ -316,6 +326,74 @@ app.delete('/api/receipt/:id', (req, res) => {
 
     db.delete(req.params.id);
     res.json({ success: true, message: 'Recibo eliminado correctamente.' });
+});
+
+// Endpoint: Obtener lista de períodos disponibles
+app.get('/api/receipts/periods', (req, res) => {
+    res.json(db.getPeriods());
+});
+
+// Endpoint: Borrado masivo (por IDs seleccionados, por período o vaciado total)
+app.post('/api/receipts/bulk-delete', (req, res) => {
+    try {
+        const { ids, period, all } = req.body;
+        let deleted = [];
+
+        if (all === true) {
+            deleted = [...db.getAll()];
+            db.clear();
+            // Limpiar directorios de archivos
+            ['receipts', 'signed', 'uploads'].forEach(sub => {
+                const dir = path.join(__dirname, 'storage', sub);
+                if (fs.existsSync(dir)) {
+                    fs.readdirSync(dir).forEach(file => {
+                        if (file !== '.gitkeep') {
+                            try { fs.unlinkSync(path.join(dir, file)); } catch(e){}
+                        }
+                    });
+                }
+            });
+            console.log(`[Bulk Delete] Base de datos y almacenamiento vaciados completamente (${deleted.length} recibos eliminados).`);
+        } else if (period) {
+            deleted = db.deleteByPeriod(period);
+            deleted.forEach(r => {
+                try {
+                    const p1 = path.join(__dirname, 'storage', 'receipts', r.filename);
+                    if (fs.existsSync(p1)) fs.unlinkSync(p1);
+                    if (r.signedFile) {
+                        const p2 = path.join(__dirname, 'storage', 'signed', r.signedFile);
+                        if (fs.existsSync(p2)) fs.unlinkSync(p2);
+                    }
+                } catch(e){}
+            });
+            console.log(`[Bulk Delete] Eliminados ${deleted.length} recibos del período ${period}.`);
+        } else if (Array.isArray(ids) && ids.length > 0) {
+            deleted = db.deleteMany(ids);
+            deleted.forEach(r => {
+                try {
+                    const p1 = path.join(__dirname, 'storage', 'receipts', r.filename);
+                    if (fs.existsSync(p1)) fs.unlinkSync(p1);
+                    if (r.signedFile) {
+                        const p2 = path.join(__dirname, 'storage', 'signed', r.signedFile);
+                        if (fs.existsSync(p2)) fs.unlinkSync(p2);
+                    }
+                } catch(e){}
+            });
+            console.log(`[Bulk Delete] Eliminados ${deleted.length} recibos seleccionados.`);
+        } else {
+            return res.status(400).json({ error: 'Debe especificar IDs, un período o all=true para borrar.' });
+        }
+
+        res.json({
+            success: true,
+            message: `Se eliminaron ${deleted.length} recibos exitosamente.`,
+            deletedCount: deleted.length,
+            stats: db.getStats()
+        });
+    } catch (error) {
+        console.error('[Bulk Delete Error]', error);
+        res.status(500).json({ error: 'Error al procesar el borrado masivo: ' + error.message });
+    }
 });
 
 // Endpoint: Reset general (para pruebas)
